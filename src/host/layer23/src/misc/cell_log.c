@@ -58,7 +58,7 @@ enum {
 };
 
 /* ranges of bands */
-static uint16_t basic_band_range[][2] = {{0, 124}, {512, 885}, {955, 1023}, {0, 0}};
+static uint16_t basic_band_range[][2] = {/*{128, 251},*/ {512 | ARFCN_PCS, 810 | ARFCN_PCS}, {0, 0}};
 uint16_t (*band_range)[][2] = &basic_band_range;
 
 #define INFO_FLG_PM	1
@@ -69,6 +69,7 @@ uint16_t (*band_range)[][2] = &basic_band_range;
 #define INFO_FLG_SI2ter	32
 #define INFO_FLG_SI3	64
 #define INFO_FLG_SI4	128
+#define INFO_FLG_PCS	256
 
 static struct osmocom_ms *ms;
 static struct osmo_timer_list timer;
@@ -312,7 +313,7 @@ static void start_sync(void)
 		 && !(pm[i].flags & INFO_FLG_SYNC)) {
 			if (pm[i].rxlev_dbm > rxlev_dbm) {
 				rxlev_dbm = pm[i].rxlev_dbm;
-				arfcn = i;
+				arfcn = i | (pm[i].flags & INFO_FLG_PCS ? ARFCN_PCS : 0);
 			}
 		}
 	}
@@ -336,15 +337,15 @@ static void start_sync(void)
 		start_pm();
 		return;
 	}
-	pm[arfcn].flags |= INFO_FLG_SYNC;
+	pm[arfcn & 0x3ff].flags |= INFO_FLG_SYNC;
 	LOGP(DSUM, LOGL_INFO, "Sync ARFCN %d (rxlev %d, %d syncs left)%s\n",
-		arfcn, pm[arfcn].rxlev_dbm, sync_count--, dist_str);
+		arfcn, pm[arfcn & 0x3ff].rxlev_dbm, sync_count--, dist_str);
 	memset(&sysinfo, 0, sizeof(sysinfo));
 	sysinfo.arfcn = arfcn;
 	state = SCAN_STATE_SYNC;
 	l1ctl_tx_reset_req(ms, L1CTL_RES_T_FULL);
 	l1ctl_tx_fbsb_req(ms, arfcn, L1CTL_FBSB_F_FB01SB, 100, 0,
-		CCCH_MODE_NONE, dbm2rxlev(pm[arfcn].rxlev_dbm));
+		CCCH_MODE_NONE, dbm2rxlev(pm[arfcn & 0x3ff].rxlev_dbm));
 }
 
 static void start_pm(void)
@@ -384,6 +385,8 @@ static int signal_cb(unsigned int subsys, unsigned int signal,
 	case S_L1CTL_PM_RES:
 		mr = signal_data;
 		index = mr->band_arfcn & 0x3ff;
+		if (mr->band_arfcn & ARFCN_PCS)
+			pm[index].flags |= INFO_FLG_PCS;
 		pm[index].flags |= INFO_FLG_PM;
 		pm[index].rxlev_dbm = mr->rx_lev - 110;
 		if (pm[index].rxlev_dbm >= min_rxlev_dbm)
