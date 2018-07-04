@@ -47,7 +47,7 @@ void rffe_mode(enum gsm_band band, int tx)
 /* Returns RF wiring */
 uint32_t rffe_get_rx_ports(void)
 {
-	return (1 << PORT_LO) | (1 << PORT_DCS1800);
+	return (1 << PORT_LO) | (1 << PORT_DCS1800) | (1 << PORT_PCS1900);
 }
 
 uint32_t rffe_get_tx_ports(void)
