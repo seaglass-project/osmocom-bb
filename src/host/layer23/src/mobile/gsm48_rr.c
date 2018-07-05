@@ -1874,6 +1874,35 @@ static int gsm48_rr_rx_sysinfo2ter(struct osmocom_ms *ms, struct msgb *msg)
 	return gsm48_new_sysinfo(ms, si->header.system_information);
 }
 
+/* receive "SYSTEM INFORMATION 2quater" message (9.1.34a) */
+static int gsm48_rr_rx_sysinfo2quater(struct osmocom_ms *ms, struct msgb *msg)
+{
+	struct gsm48_system_information_type_2quater *si = msgb_l3(msg);
+	struct gsm48_sysinfo *s = ms->cellsel.si;
+	int payload_len = msgb_l3len(msg) - sizeof(*si);
+
+	if (!s) {
+		LOGP(DRR, LOGL_INFO, "No cell selected, SYSTEM INFORMATION 2quater"
+			" ignored\n");
+		return -EINVAL;
+	}
+
+	if (payload_len < 0) {
+		LOGP(DRR, LOGL_NOTICE, "Short read of SYSTEM INFORMATION 2quater "
+			"message.\n");
+		return -EINVAL;
+	}
+
+	if (!memcmp(si, s->si2q_msg, MIN(msgb_l3len(msg), sizeof(s->si2q_msg))))
+		return 0;
+
+	gsm48_decode_sysinfo2quater(s, si, msgb_l3len(msg));
+
+	LOGP(DRR, LOGL_INFO, "New SYSTEM INFORMATION 2quater\n");
+
+	return gsm48_new_sysinfo(ms, si->header.system_information);
+}
+
 /* receive "SYSTEM INFORMATION 3" message (9.1.35) */
 static int gsm48_rr_rx_sysinfo3(struct osmocom_ms *ms, struct msgb *msg)
 {
@@ -2063,6 +2092,35 @@ static int gsm48_rr_rx_sysinfo6(struct osmocom_ms *ms, struct msgb *msg)
 	LOGP(DRR, LOGL_INFO, "using (new) SACCH timeout %d\n", meas->rl_fail);
 
 	return gsm48_new_sysinfo(ms, si->system_information);
+}
+
+/* receive "SYSTEM INFORMATION 13" message (9.1.43a) */
+static int gsm48_rr_rx_sysinfo13(struct osmocom_ms *ms, struct msgb *msg)
+{
+	struct gsm48_system_information_type_13 *si = msgb_l3(msg);
+	struct gsm48_sysinfo *s = ms->cellsel.si;
+	int payload_len = msgb_l3len(msg) - sizeof(*si);
+
+	if (!s) {
+		LOGP(DRR, LOGL_INFO, "No cell selected, SYSTEM INFORMATION 13 "
+			"ignored\n");
+		return -EINVAL;
+	}
+
+	if (payload_len < 0) {
+		LOGP(DRR, LOGL_NOTICE, "Short read of SYSTEM INFORMATION 13 "
+			"message.\n");
+		return -EINVAL;
+	}
+
+	if (!memcmp(si, s->si13_msg, MIN(msgb_l3len(msg), sizeof(s->si4_msg))))
+		return 0;
+
+	gsm48_decode_sysinfo13(s, si, msgb_l3len(msg));
+
+	LOGP(DRR, LOGL_INFO, "New SYSTEM INFORMATION 13\n");
+
+	return gsm48_new_sysinfo(ms, si->header.system_information);
 }
 
 /*
@@ -4700,10 +4758,14 @@ static int gsm48_rr_rx_bcch(struct osmocom_ms *ms, struct msgb *msg)
 		return gsm48_rr_rx_sysinfo2bis(ms, msg);
 	case GSM48_MT_RR_SYSINFO_2ter:
 		return gsm48_rr_rx_sysinfo2ter(ms, msg);
+	case GSM48_MT_RR_SYSINFO_2quater:
+		return gsm48_rr_rx_sysinfo2quater(ms, msg);
 	case GSM48_MT_RR_SYSINFO_3:
 		return gsm48_rr_rx_sysinfo3(ms, msg);
 	case GSM48_MT_RR_SYSINFO_4:
 		return gsm48_rr_rx_sysinfo4(ms, msg);
+	case GSM48_MT_RR_SYSINFO_13:
+		return gsm48_rr_rx_sysinfo13(ms, msg);
 	default:
 #if 0
 		LOGP(DRR, LOGL_NOTICE, "BCCH message type 0x%02x not sup.\n",

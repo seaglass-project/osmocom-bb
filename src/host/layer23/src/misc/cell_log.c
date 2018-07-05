@@ -61,15 +61,17 @@ enum {
 static uint16_t basic_band_range[][2] = {/*{128, 251},*/ {512 | ARFCN_PCS, 810 | ARFCN_PCS}, {0, 0}};
 uint16_t (*band_range)[][2] = &basic_band_range;
 
-#define INFO_FLG_PM	1
-#define INFO_FLG_SYNC	2
-#define INFO_FLG_SI1	4
-#define INFO_FLG_SI2	8
-#define INFO_FLG_SI2bis	16
-#define INFO_FLG_SI2ter	32
-#define INFO_FLG_SI3	64
-#define INFO_FLG_SI4	128
-#define INFO_FLG_PCS	256
+#define INFO_FLG_PM		1
+#define INFO_FLG_SYNC		2
+#define INFO_FLG_SI1		4
+#define INFO_FLG_SI2		8
+#define INFO_FLG_SI2bis		16
+#define INFO_FLG_SI2ter		32
+#define INFO_FLG_SI2quater	64
+#define INFO_FLG_SI3		128
+#define INFO_FLG_SI4		256
+#define INFO_FLG_SI13		512
+#define INFO_FLG_PCS		1024
 
 static struct osmocom_ms *ms;
 static struct osmo_timer_list timer;
@@ -206,10 +208,14 @@ static void log_sysinfo(void)
 		log_frame("si2bis", s->si2b_msg);
 	if (s->si2ter)
 		log_frame("si2ter", s->si2t_msg);
+	if (s->si2quater)
+		log_frame("si2quater", s->si2q_msg);
 	if (s->si3)
 		log_frame("si3", s->si3_msg);
 	if (s->si4)
 		log_frame("si4", s->si4_msg);
+	if (s->si13)
+		log_frame("si13", s->si13_msg);
 	if (log_si.ta != 0xff)
 		LOGFILE("ta %d\n", log_si.ta);
 
@@ -588,6 +594,18 @@ static int new_sysinfo(void)
 		return 0;
 	}
 
+	/* 2quater */
+	if (s->si2quater_ind && !s->si2quater) {
+		LOGP(DRR, LOGL_INFO, "si2quater_ind, but si2quater not received\n");
+		return 0;
+	}
+
+	/* 13 */
+	if (s->gprs && !s->si13) {
+		LOGP(DRR, LOGL_INFO, "gprs, but si13 not received\n");
+		return 0;
+	}
+
 	LOGP(DRR, LOGL_INFO, "Sysinfo complete\n");
 
 	stop_timer();
@@ -642,6 +660,14 @@ static int bcch(struct osmocom_ms *ms, struct msgb *msg)
 			(struct gsm48_system_information_type_2ter *) sih,
 			msgb_l3len(msg));
 		return new_sysinfo();
+	case GSM48_MT_RR_SYSINFO_2quater:
+		if (!memcmp(sih, s->si2q_msg, sizeof(s->si2q_msg)))
+			return 0;
+		LOGP(DRR, LOGL_INFO, "New SYSTEM INFORMATION 2quater\n");
+		gsm48_decode_sysinfo2quater(s,
+			(struct gsm48_system_information_type_2quater *) sih,
+			msgb_l3len(msg));
+		return new_sysinfo();
 	case GSM48_MT_RR_SYSINFO_3:
 		if (!memcmp(sih, s->si3_msg, sizeof(s->si3_msg)))
 			return 0;
@@ -660,6 +686,14 @@ static int bcch(struct osmocom_ms *ms, struct msgb *msg)
 		LOGP(DRR, LOGL_INFO, "New SYSTEM INFORMATION 4\n");
 		gsm48_decode_sysinfo4(s,
 			(struct gsm48_system_information_type_4 *) sih,
+			msgb_l3len(msg));
+		return new_sysinfo();
+	case GSM48_MT_RR_SYSINFO_13:
+		if (!memcmp(sih, s->si13_msg, sizeof(s->si13_msg)))
+			return 0;
+		LOGP(DRR, LOGL_INFO, "New SYSTEM INFORMATION 13\n");
+		gsm48_decode_sysinfo13(s,
+			(struct gsm48_system_information_type_13 *) sih,
 			msgb_l3len(msg));
 		return new_sysinfo();
 	default:

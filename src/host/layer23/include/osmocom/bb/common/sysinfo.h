@@ -20,20 +20,23 @@
 /* structure of all received system informations */
 struct gsm48_sysinfo {
 	/* flags of available information */
-	uint8_t				si1, si2, si2bis, si2ter, si3,
-					si4, si5, si5bis, si5ter, si6;
+	uint8_t				si1, si2, si2bis, si2ter, si2quater,
+					si3, si4, si5, si5bis, si5ter, si6,
+					si13;
 
 	/* memory maps to simply detect change in system info messages */
 	uint8_t				si1_msg[23];
 	uint8_t				si2_msg[23];
 	uint8_t				si2b_msg[23];
 	uint8_t				si2t_msg[23];
+	uint8_t 			si2q_msg[23];
 	uint8_t				si3_msg[23];
 	uint8_t				si4_msg[23];
 	uint8_t				si5_msg[18];
 	uint8_t				si5b_msg[18];
 	uint8_t				si5t_msg[18];
 	uint8_t				si6_msg[18];
+	uint8_t 			si13_msg[23];
 
 	struct	gsm_sysinfo_freq	freq[1024]; /* all frequencies */
 	uint16_t			hopping[64]; /* hopping arfcn */
@@ -69,6 +72,9 @@ struct gsm48_sysinfo {
 	uint8_t				gprs;
 	uint8_t				gprs_ra_colour;
 	uint8_t				gprs_si13_pos;
+	uint8_t				umts_ecsm_sr;
+	uint8_t				si2quater_ind;
+	uint8_t				si2quater_pos;
 
 	/* cell selection */
 	int8_t				ms_txpwr_max_cch;
@@ -139,6 +145,8 @@ int gsm48_decode_sysinfo2bis(struct gsm48_sysinfo *s,
 		struct gsm48_system_information_type_2bis *si, int len);
 int gsm48_decode_sysinfo2ter(struct gsm48_sysinfo *s,
 		struct gsm48_system_information_type_2ter *si, int len);
+int gsm48_decode_sysinfo2quater(struct gsm48_sysinfo *s,
+		struct gsm48_system_information_type_2quater *si, int len);
 int gsm48_decode_sysinfo3(struct gsm48_sysinfo *s,
 		struct gsm48_system_information_type_3 *si, int len);
 int gsm48_decode_sysinfo4(struct gsm48_sysinfo *s,
@@ -151,6 +159,8 @@ int gsm48_decode_sysinfo5ter(struct gsm48_sysinfo *s,
 		struct gsm48_system_information_type_5ter *si, int len);
 int gsm48_decode_sysinfo6(struct gsm48_sysinfo *s,
 		struct gsm48_system_information_type_6 *si, int len);
+int gsm48_decode_sysinfo13(struct gsm48_sysinfo *s,
+		struct gsm48_system_information_type_13 *si, int len);
 int gsm48_decode_mobile_alloc(struct gsm_sysinfo_freq *freq,
 	uint8_t *ma, uint8_t len, uint16_t *hopping, uint8_t *hopp_len,
 	int si4);

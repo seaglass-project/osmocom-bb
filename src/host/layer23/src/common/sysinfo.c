@@ -87,6 +87,8 @@ int gsm48_sysinfo_dump(struct gsm48_sysinfo *s, uint16_t arfcn,
 		print(priv, " 2bis");
 	if (s->si2ter)
 		print(priv, " 2ter");
+	if (s->si2quater)
+		print(priv, " 2quater");
 	if (s->si3)
 		print(priv, " 3");
 	if (s->si4)
@@ -99,6 +101,8 @@ int gsm48_sysinfo_dump(struct gsm48_sysinfo *s, uint16_t arfcn,
 		print(priv, " 5ter");
 	if (s->si6)
 		print(priv, " 6");
+	if (s->si13)
+		print(priv, " 13");
 	print(priv, "\n");
 	print(priv, "\n");
 
@@ -522,7 +526,7 @@ static int gsm48_decode_si3_rest(struct gsm48_sysinfo *s, uint8_t *si,
 		s->po_value = bitvec_get_uint(&bv, 2);
 	} else
 		s->po = 0;
-	/* System Onformation 2ter Indicator */
+	/* System Information 2ter Indicator */
 	if (bitvec_get_bit_high(&bv) == H)
 		s->si2ter_ind = 1;
 	else
@@ -545,6 +549,13 @@ static int gsm48_decode_si3_rest(struct gsm48_sysinfo *s, uint8_t *si,
 		s->gprs_si13_pos = bitvec_get_uint(&bv, 1);
 	} else
 		s->gprs = 0;
+	/* 3G Early Classmark Sending Restriction */
+	s->umts_ecsm_sr = bitvec_get_uint(&bv, 1);
+	/* System Information 2quater indicator */
+	if (bitvec_get_bit_high(&bv) == H) {
+		s->si2quater_ind = 1;
+		s->si2quater_pos = bitvec_get_uint(&bv, 1);
+	}
 
 	return 0;
 }
@@ -673,6 +684,16 @@ int gsm48_decode_sysinfo2ter(struct gsm48_sysinfo *s,
 			FREQ_TYPE_NCELL_2ter);
 
 	s->si2ter = 1;
+
+	return 0;
+}
+
+int gsm48_decode_sysinfo2quater(struct gsm48_sysinfo *s,
+		struct gsm48_system_information_type_2quater *si, int len)
+{
+	memcpy(s->si2q_msg, si, MIN(len, sizeof(s->si2q_msg)));
+
+	s->si2quater = 1;
 
 	return 0;
 }
@@ -840,6 +861,16 @@ int gsm48_decode_sysinfo6(struct gsm48_sysinfo *s,
 		gsm48_decode_si6_rest(s, si->rest_octets, payload_len);
 
 	s->si6 = 1;
+
+	return 0;
+}
+
+int gsm48_decode_sysinfo13(struct gsm48_sysinfo *s,
+		struct gsm48_system_information_type_13 *si, int len)
+{
+	memcpy(s->si13_msg, si, MIN(len, sizeof(s->si13_msg)));
+
+	s->si13 = 1;
 
 	return 0;
 }
