@@ -68,7 +68,7 @@ static void board_io_init(void)
 	/* LCD Set I/O(3) to output mode and enable C140 backlight (IO1) */
 	/* FIXME: Put the display backlight control to backlight.c */
 	reg = readw(IO_CNTL_REG);
-	reg &= ~((1 << 3) | (1 << 1));
+	reg &= ~((1 << 3) /*| (1 << 1)*/);
 	writew(reg, IO_CNTL_REG);
 
 	/* LCD Set I/O(3) output low */
@@ -145,5 +145,5 @@ void board_init(int with_irq)
 	twl3025_init();
 
 	/* enable LEDB driver of Iota for keypad backlight */
-	twl3025_reg_write(AUXLED, 0x02);
+	//twl3025_reg_write(AUXLED, 0x02);
 }

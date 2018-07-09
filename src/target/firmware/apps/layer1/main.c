@@ -84,7 +84,7 @@ int main(void)
 	fb_setfont(FB_FONT_HELVB14);
 
 	fb_gotoxy(2,20);
-	fb_putstr("Layer 1",framebuffer->width-4);
+	fb_putstr("UW CSE",framebuffer->width-4);
 
 	fb_setfg(FB_COLOR_RED);
 	fb_setbg(FB_COLOR_BLUE);
@@ -95,7 +95,7 @@ int main(void)
 	fb_setfg(FB_COLOR_WHITE);
 	fb_setfont(FB_FONT_HELVR08);
 	fb_gotoxy(8,33);
-	fb_putstr("osmocom-bb",framebuffer->width-4);
+	fb_putstr("spiglass",framebuffer->width-4);
 
 	fb_flush();
 

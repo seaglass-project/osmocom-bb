@@ -88,7 +88,7 @@ int l23_app_init(struct osmocom_ms *ms)
 
 static int l23_cfg_supported()
 {
-	return L23_OPT_TAP | L23_OPT_DBG;
+	return L23_OPT_TAP | L23_OPT_DBG | L23_OPT_TAP;
 }
 
 static int l23_getopt_options(struct option **options)
