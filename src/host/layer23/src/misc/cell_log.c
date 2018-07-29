@@ -27,6 +27,9 @@
 #include <time.h>
 #include <errno.h>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+
 #include <l1ctl_proto.h>
 
 #include <osmocom/core/logging.h>
@@ -831,8 +834,10 @@ int scan_init(struct osmocom_ms *_ms)
 
 	if (!strcmp(logname, "-"))
 		logfp = stdout;
-	else
+	else {
+		mkfifo(logname, S_IRUSR | S_IWUSR);
 		logfp = fopen(logname, "a");
+	}
 	if (!logfp) {
 		fprintf(stderr, "Failed to open logfile '%s'\n", logname);
 		scan_exit();
