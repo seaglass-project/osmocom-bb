@@ -405,6 +405,7 @@ int read_file(const char *filename, int chainload)
 	printf("read_file(%s): file_size=%u, hdr_len=%u, dnload_len=%u\n",
 		chainload ? "chainloader" : filename, (int)st.st_size,
 		hdr_len, dnload.data_len);
+	fflush(stdout);
 
 	return 0;
 }
@@ -583,6 +584,7 @@ static int handle_write_block(void)
 			dnload.romload_state = LAST_BLOCK_SENT;
 			printf("Finished, sent %i blocks in total\n",
 				dnload.block_number);
+			fflush(stdout);
 		} else {
 			dnload.romload_state = WAITING_BLOCK_ACK;
 		}
@@ -628,6 +630,7 @@ static int handle_write_dnload(void)
 		}
 	} else if (dnload.write_ptr >= dnload.data + dnload.data_len) { 
 		printf("finished\n");
+		fflush(stdout);
 		dnload.write_ptr = dnload.data;
 		dnload.serial_fd.when &= ~BSC_FD_WRITE;
 		return 1;
@@ -649,6 +652,7 @@ static int handle_write_dnload(void)
 
 	printf("%u bytes (%lu/%u)\n", rc, dnload.write_ptr - dnload.data,
 		dnload.data_len);
+	fflush(stdout);
 
 	return 0;
 }
@@ -797,6 +801,7 @@ static int handle_buffer(int buf_used_len)
 		printf("got %i bytes from modem, ", nbytes);
 		printf("data looks like: ");
 		osmocon_osmo_hexdump(bufptr, nbytes);
+		fflush(stdout);
 	} else {
 		for (i = 0; i < nbytes; ++i)
 			if (sercomm_drv_rx_char(bufptr[i]) == 0)
@@ -817,6 +822,7 @@ static int handle_read(void)
 
 	if (!memcmp(buffer, phone_prompt1, sizeof(phone_prompt1))) {
 		printf("Received PROMPT1 from phone, responding with CMD\n");
+		fflush(stdout);
 		dnload.expect_hdlc = 0;
 		dnload.state = WAITING_PROMPT2;
 		if(dnload.filename) {
@@ -832,11 +838,13 @@ static int handle_read(void)
 		}
 	} else if (!memcmp(buffer, phone_prompt2, sizeof(phone_prompt2))) {
 		printf("Received PROMPT2 from phone, starting download\n");
+		fflush(stdout);
 		dnload.serial_fd.when = BSC_FD_READ | BSC_FD_WRITE;
 		dnload.state = DOWNLOADING;
 	} else if (!memcmp(buffer, phone_ack, sizeof(phone_ack))) {
 		printf("Received DOWNLOAD ACK from phone, your code is"
 			" running now!\n");
+		fflush(stdout);
 		dnload.serial_fd.when = BSC_FD_READ;
 		dnload.state = WAITING_PROMPT1;
 		dnload.write_ptr = dnload.data;
@@ -847,6 +855,7 @@ static int handle_read(void)
 		if (dnload.do_chainload) {
 			printf("Enabled Compal ramloader -> Calypso romloader"
 				" chainloading mode\n");
+			fflush(stdout);
 			bufptr = buffer;
 			dnload.previous_mode = dnload.mode;
 			dnload.mode = MODE_ROMLOAD;
@@ -858,17 +867,20 @@ static int handle_read(void)
 	} else if (!memcmp(buffer, phone_nack, sizeof(phone_nack))) {
 		printf("Received DOWNLOAD NACK from phone, something went"
 			" wrong :(\n");
+		fflush(stdout);
 		dnload.serial_fd.when = BSC_FD_READ;
 		dnload.state = WAITING_PROMPT1;
 		dnload.write_ptr = dnload.data;
 	} else if (!memcmp(buffer, phone_nack_magic, sizeof(phone_nack_magic))) {
 		printf("Received MAGIC NACK from phone, you need to"
 			" have \"1003\" at 0x803ce0\n");
+		fflush(stdout);
 		dnload.serial_fd.when = BSC_FD_READ;
 		dnload.state = WAITING_PROMPT1;
 		dnload.write_ptr = dnload.data;
 	} else if (!memcmp(buffer, ftmtool, sizeof(ftmtool))) {
 		printf("Received FTMTOOL from phone, ramloader has aborted\n");
+		fflush(stdout);
 		dnload.serial_fd.when = BSC_FD_READ;
 		dnload.state = WAITING_PROMPT1;
 		dnload.write_ptr = dnload.data;
@@ -931,6 +943,7 @@ static int handle_read_romload(void)
 
 		printf("Received parameter ack from phone, "
 			"starting download\n");
+		fflush(stdout);
 		osmo_serial_set_baudrate(dnload.serial_fd.fd, ROMLOAD_DL_BAUDRATE);
 
 		/* using the max blocksize the phone tells us */
@@ -961,6 +974,7 @@ static int handle_read_romload(void)
 				   sizeof(romload_block_nack))) {
 			printf("Received block nack from phone, "
 				"something went wrong, aborting\n");
+			fflush(stdout);
 			osmo_serial_set_baudrate(dnload.serial_fd.fd, ROMLOAD_INIT_BAUDRATE);
 			dnload.romload_state = WAITING_IDENTIFICATION;
 			osmo_timer_schedule(&tick_timer, 0, dnload.beacon_interval);
@@ -980,6 +994,7 @@ static int handle_read_romload(void)
 				   sizeof(romload_checksum_nack))) {
 			printf("Checksum on phone side (0x%02x) doesn't "
 				"match ours, aborting\n", ~buffer[2]);
+			fflush(stdout);
 			osmo_serial_set_baudrate(dnload.serial_fd.fd, ROMLOAD_INIT_BAUDRATE);
 			dnload.romload_state = WAITING_IDENTIFICATION;
 			osmo_timer_schedule(&tick_timer, 0, dnload.beacon_interval);
@@ -990,6 +1005,7 @@ static int handle_read_romload(void)
 		if (!memcmp(buffer, romload_branch_ack,
 			    sizeof(romload_branch_ack))) {
 			printf("Received branch ack, your code is running now!\n");
+			fflush(stdout);
 			dnload.serial_fd.when = BSC_FD_READ;
 			dnload.romload_state = FINISHED;
 			dnload.write_ptr = dnload.data;
@@ -1008,6 +1024,7 @@ static int handle_read_romload(void)
 		} else if (!memcmp(buffer, romload_branch_nack,
 			   sizeof(romload_branch_nack))) {
 			printf("Received branch nack, aborting\n");
+			fflush(stdout);
 			osmo_serial_set_baudrate(dnload.serial_fd.fd, ROMLOAD_INIT_BAUDRATE);
 			dnload.romload_state = WAITING_IDENTIFICATION;
 			osmo_timer_schedule(&tick_timer, 0, dnload.beacon_interval);
@@ -1228,7 +1245,8 @@ static int usage(const char *name)
 static int version(const char *name)
 {
 	printf("%s version %s\n", name, PACKAGE_VERSION);
-	exit(2);
+	fflush(stdout);
+	//exit(2);
 }
 
 static int un_tool_read(struct osmo_fd *fd, unsigned int flags)
