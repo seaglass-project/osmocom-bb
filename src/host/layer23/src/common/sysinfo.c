@@ -761,7 +761,8 @@ short_read:
 			gsm48_decode_chan_h1(cd, &s->tsc, &s->maio, &s->hsn);
 		} else {
 			s->h = 0;
-			gsm48_decode_chan_h0(cd, &s->tsc, &s->arfcn);
+			uint16_t dummy_arfcn;
+			gsm48_decode_chan_h0(cd, &s->tsc, &dummy_arfcn);
 		}
 		payload_len -= 4;
 		data += 4;
