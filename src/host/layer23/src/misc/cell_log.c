@@ -48,7 +48,7 @@
 #include <osmocom/bb/misc/cell_log.h>
 #include "../../../gsmmap/geo.h"
 
-#define READ_WAIT	2, 0
+#define READ_WAIT	5, 0
 #define RACH_WAIT	0, 900000
 #define MIN_RXLEV_DBM	-106
 #define MAX_DIST	2000
@@ -231,6 +231,7 @@ static void timeout_cb(void *arg)
 	switch (state) {
 	case SCAN_STATE_READ:
 		LOGP(DRR, LOGL_INFO, "Timeout reading BCCH\n");
+		log_sysinfo();
 		start_sync();
 		break;
 	case SCAN_STATE_RACH:
