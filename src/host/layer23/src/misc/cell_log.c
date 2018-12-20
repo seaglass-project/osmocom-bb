@@ -567,6 +567,12 @@ static int pch_agch(struct osmocom_ms *ms, struct msgb *msg)
 		return imm_ass_ext(ms, msg);
 	case GSM48_MT_RR_IMM_ASS_REJ:
 		return imm_ass_rej(ms, msg);
+	// Handle Extended BCCH messages
+	case GSM48_MT_RR_SYSINFO_2quater:
+	case GSM48_MT_RR_SYSINFO_13:
+	// SYSINFO_7 and SYSINFO_8 are also sent on the Extended BCCH but
+	// have not been observed in the wild
+		return bcch(ms, msg);
 	default:
 		return -EINVAL;
 	}
