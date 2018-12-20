@@ -76,6 +76,7 @@ uint16_t (*band_range)[][2] = &basic_band_range;
 #define INFO_FLG_SI13		512
 #define INFO_FLG_PCS		1024
 
+static int bcch(struct osmocom_ms *ms, struct msgb *msg);
 static struct osmocom_ms *ms;
 static struct osmo_timer_list timer;
 
