@@ -114,7 +114,14 @@ int layer2_open(struct osmocom_ms *ms, const char *socket_path)
 	}
 
 	local.sun_family = AF_UNIX;
-	strncpy(local.sun_path, socket_path, sizeof(local.sun_path));
+
+	/* Hack to support Android, which only support the abstract namespace */
+	if (!strncmp(socket_path, ":ABSTRACT:", 10)) {
+		strncpy(local.sun_path + 1, socket_path + 10, sizeof(local.sun_path) - 1);
+		local.sun_path[0] = '\0';
+	} else {
+		strncpy(local.sun_path, socket_path, sizeof(local.sun_path));
+	}
 	local.sun_path[sizeof(local.sun_path) - 1] = '\0';
 
 	rc = connect(ms->l2_wq.bfd.fd, (struct sockaddr *) &local,
