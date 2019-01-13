@@ -119,13 +119,16 @@ int layer2_open(struct osmocom_ms *ms, const char *socket_path)
 	if (!strncmp(socket_path, ":ABSTRACT:", 10)) {
 		strncpy(local.sun_path + 1, socket_path + 10, sizeof(local.sun_path) - 1);
 		local.sun_path[0] = '\0';
+		local.sun_path[sizeof(local.sun_path) - 1] = '\0';
+		rc = connect(ms->l2_wq.bfd.fd, (struct sockaddr *) &local,
+		    	offsetof(struct sockaddr_un, sun_path) + strlen(socket_path + 10) + 1);
 	} else {
 		strncpy(local.sun_path, socket_path, sizeof(local.sun_path));
+		local.sun_path[sizeof(local.sun_path) - 1] = '\0';
+		rc = connect(ms->l2_wq.bfd.fd, (struct sockaddr *) &local,
+		    	sizeof(local));
 	}
-	local.sun_path[sizeof(local.sun_path) - 1] = '\0';
 
-	rc = connect(ms->l2_wq.bfd.fd, (struct sockaddr *) &local,
-		     sizeof(local));
 	if (rc < 0) {
 		fprintf(stderr, "Failed to connect to '%s': %s\n", local.sun_path,
 			strerror(errno));
